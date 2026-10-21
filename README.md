@@ -7,25 +7,33 @@ traditional category they missed.
 
 ## Run locally
 
-This is a dependency-free static site. From this repository's directory:
+CourtVision runs a dependency-free local analytics server. It loads the stored
+NBA corpus automatically; there is no CSV upload step. From this repository's
+directory:
 
 ```powershell
-python -m http.server 8765 --directory dist
+python server.py
 ```
 
-Open <http://127.0.0.1:8765> in your browser.
+Open <http://127.0.0.1:8765> in your browser. The first startup loads the
+corpus into memory, so allow a moment for the server to report that it is ready.
 
 If you use a project virtual environment stored one level above this directory,
 run:
 
 ```powershell
-& ..\.venv\Scripts\python.exe -m http.server 8765 --directory dist
+& ..\.venv\Scripts\python.exe server.py
 ```
 
-## Use your NBA data
+## Stored corpus
 
-Click **Import CSV** and select your player-game data file. The app processes
-the file entirely in the browser; it does not upload your data.
+By default, the server reads the sibling file
+`../nba_player_game_logs.csv`. It holds the player-game corpus used by every
+query. To use another compatible corpus, provide its path:
+
+```powershell
+python server.py --data C:\path\to\nba_player_game_logs.csv
+```
 
 Required columns:
 

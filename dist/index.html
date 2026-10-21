@@ -24,7 +24,7 @@
     <main>
       <header class="topbar">
         <div><p class="eyebrow">ANALYTICS WORKSPACE / 01</p><h1 id="pageTitle">Triple-Double Lab</h1></div>
-        <div class="top-actions"><span id="datasetStatus" class="dataset-status">No data loaded</span><label class="upload-mini">Import CSV<input id="fileInput" type="file" accept=".csv,text/csv"></label></div>
+        <div class="top-actions"><span id="datasetStatus" class="dataset-status">Connecting to corpus...</span><span class="corpus-badge">LOCAL CORPUS</span></div>
       </header>
 
       <section id="labView" class="view active">
@@ -52,8 +52,8 @@
         </section>
 
         <section class="results-card">
-          <div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3>Qualifying player-games</h3></div><div class="results-actions"><span id="resultMeta">Import a CSV to query your data</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr></thead><tbody id="resultsBody"><tr class="empty"><td colspan="11"><div class="empty-glyph">⌁</div><strong>Your analysis canvas is ready.</strong><br>Import <code>nba_player_game_logs.csv</code> or explore the demo data.</td></tr></tbody></table></div>
+          <div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3>Qualifying player-games</h3></div><div class="results-actions"><span id="resultMeta">Loading corpus...</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr></thead><tbody id="resultsBody"><tr class="empty"><td colspan="11"><div class="empty-glyph">⌁</div><strong>Connecting to the NBA corpus.</strong><br>The analysis will be ready in a moment.</td></tr></tbody></table></div>
         </section>
       </section>
 
