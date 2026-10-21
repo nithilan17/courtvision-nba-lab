@@ -1,80 +1,40 @@
-# CourtVision NBA Lab
+# CourtVision NBA Stat Tracker
 
-CourtVision is a browser-local NBA analytics workspace. Its first module,
-**Triple-Double Lab**, finds player-games that would qualify as a custom
-triple-double when a player's steals and blocks are pooled into the one
-traditional category they missed.
+CourtVision is a local NBA player-game stat tracker. Query how many games and
+how many distinct players fall inside a selected minimum/maximum stat range,
+then inspect the games or aggregate them by player.
 
-## Run locally
+## Run
 
-CourtVision runs a dependency-free local analytics server. It loads the stored
-NBA corpus automatically; there is no CSV upload step. From this repository's
-directory:
+The app reads the stored sibling corpus automatically; no browser upload is
+needed.
 
 ```powershell
-python server.py
-```
-
-Open <http://127.0.0.1:8765> in your browser. The first startup loads the
-corpus into memory, so allow a moment for the server to report that it is ready.
-
-If you use a project virtual environment stored one level above this directory,
-run:
-
-```powershell
+cd C:\Users\nithi\Projects\sports-sandbox\courtvision-nba-lab
 & ..\.venv\Scripts\python.exe server.py
 ```
 
-## Stored corpus
+Open <http://127.0.0.1:8765>. The first run creates a local SQLite index under
+`.courtvision/`; later launches reuse it for fast queries.
 
-By default, the server reads the sibling file
-`../nba_player_game_logs.csv`. It holds the player-game corpus used by every
-query. To use another compatible corpus, provide its path:
+## Query features
+
+- Choose points, rebounds, assists, steals, or blocks.
+- Set inclusive minimum and maximum values.
+- Restrict to regular season, playoffs, a player name, or a season range.
+- View matching game logs or aggregate matching games by player.
+- Export the active view to CSV.
+
+## Corpus
+
+By default the server uses `../nba_player_game_logs.csv`. It must contain:
+
+```text
+PLAYER_NAME,PLAYER_ID,GAME_ID,GAME_DATE,SEASON,SEASON_TYPE,PTS,REB,AST,STL,BLK
+```
+
+To use another compatible corpus:
 
 ```powershell
-python server.py --data C:\path\to\nba_player_game_logs.csv
+& ..\.venv\Scripts\python.exe server.py --data C:\path\to\nba_player_game_logs.csv
 ```
-
-Required columns:
-
-```text
-PLAYER_NAME,PTS,REB,AST,STL,BLK
-```
-
-Recommended columns:
-
-```text
-PLAYER_ID,GAME_ID,GAME_DATE,SEASON,SEASON_TYPE
-```
-
-`SEASON_TYPE` should use `Regular Season` or `Playoffs` to enable the game-type
-filter. The included Python downloader in the parent analytics project produces
-this schema.
-
-## Triple-double rule
-
-A player-game is returned when:
-
-1. Exactly two of points, rebounds, and assists are at least 10.
-2. The remaining traditional category is below 10.
-3. That missed category plus steals plus blocks reaches 10.
-
-For example: 20 points, 10 rebounds, 7 assists, 2 steals, and 1 block becomes
-20 points, 10 rebounds, and 10 adjusted assists. Existing official
-triple-doubles are intentionally excluded.
-
-## Features
-
-- Season, game-type, player-name, and defensive-stat filters
-- Dual-handle season timeline for querying an era range
-- Player leaderboard aggregated by qualifying-game count
-- Query results with adjusted values and missed category
-- Summary metrics and player leaderboard signal
-- Exportable qualifying-game CSV
-- Responsive layout and scaffolded tabs for future NBA analyses
-
-## Privacy and scope
-
-The included demo data is illustrative only. Use a validated NBA player-game
-dataset for real results. This is a custom counterfactual metric, not an
-official NBA statistic.

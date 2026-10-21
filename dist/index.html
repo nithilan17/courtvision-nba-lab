@@ -1,70 +1,8 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#07111f">
-  <title>CourtVision | NBA Lab</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>.timeline{margin-top:22px;padding:16px;border:1px solid #2d4055;border-radius:7px;background:#0b1726}.timeline-head{display:flex;align-items:center;justify-content:space-between;font:10px 'DM Mono';letter-spacing:1px;color:#91a0b2}.timeline-labels{color:#dce6ef}.timeline-track{position:relative;height:31px;margin-top:11px}.timeline-track input{appearance:none;position:absolute;left:0;top:8px;width:100%;margin:0;background:transparent;pointer-events:none}.timeline-track input::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border-radius:50%;background:#ffb14a;border:2px solid #0b1726;pointer-events:auto;cursor:pointer}.timeline-track input::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#ffb14a;border:2px solid #0b1726;pointer-events:auto;cursor:pointer}.timeline-track:before{content:"";position:absolute;left:0;right:0;top:14px;height:3px;border-radius:5px;background:#31455b}.view-toggle{display:flex;border:1px solid #34465c;border-radius:6px;overflow:hidden}.view-toggle button{background:transparent;border:0;color:#91a0b2;padding:7px 9px;font-size:10px;cursor:pointer}.view-toggle button.active{background:#233950;color:#fff}.rank{color:#7f8ea1}</style>
-</head>
-<body>
-  <div class="shell">
-    <aside class="sidebar">
-      <a class="brand" href="#"><span class="brand-mark">CV</span><span>CourtVision<small>NBA LAB</small></span></a>
-      <nav class="nav" aria-label="Workspace sections">
-        <button class="nav-item active" data-view="lab"><span>⌁</span> Triple-Double Lab</button>
-        <button class="nav-item" data-view="dashboard"><span>◫</span> Overview</button>
-        <button class="nav-item" data-view="players"><span>◎</span> Player Explorer</button>
-        <button class="nav-item" data-view="seasons"><span>⌇</span> Season Trends</button>
-        <button class="nav-item" data-view="data"><span>↥</span> Data Library</button>
-      </nav>
-      <div class="sidebar-note"><span class="live-dot"></span> Browser-local data<br><small>Your CSV never leaves this browser.</small></div>
-    </aside>
-
-    <main>
-      <header class="topbar">
-        <div><p class="eyebrow">ANALYTICS WORKSPACE / 01</p><h1 id="pageTitle">Triple-Double Lab</h1></div>
-        <div class="top-actions"><span id="datasetStatus" class="dataset-status">Connecting to corpus...</span><span class="corpus-badge">LOCAL CORPUS</span></div>
-      </header>
-
-      <section id="labView" class="view active">
-        <div class="hero">
-          <div><p class="eyebrow amber">CUSTOM METRIC</p><h2>Find the games the box score<br>almost called a triple-double.</h2><p>Pool steals + blocks into the one traditional category a player missed. Tune the filters, run the query, and export the evidence.</p></div>
-          <div class="hero-rule"><span>RULE</span><strong>2 × 10+</strong><i>in PTS / REB / AST</i><b>+</b><strong>STL + BLK</strong><i>fills the remaining gap</i></div>
-        </div>
-
-        <section class="control-card">
-          <div class="control-heading"><div><p class="eyebrow">QUERY BUILDER</p><h3>Counterfactual triple-doubles</h3></div><button id="runButton" class="primary">Run analysis <span>→</span></button></div>
-          <div class="filters">
-            <label>Season<select id="seasonFilter"><option value="all">All seasons</option></select></label>
-            <label>Game type<select id="typeFilter"><option value="all">Regular season + playoffs</option><option value="Regular Season">Regular season</option><option value="Playoffs">Playoffs</option></select></label>
-            <label>Player name<input id="playerFilter" type="search" placeholder="Any player"></label>
-            <label>Minimum STL + BLK<input id="defenseFilter" type="number" min="0" value="0"></label>
-          </div>
-          <div class="timeline"><div class="timeline-head"><span>SEASON TIMELINE</span><span class="timeline-labels"><b id="startSeasonLabel">—</b> <span>to</span> <b id="endSeasonLabel">—</b></span></div><div class="timeline-track"><input id="startSeasonRange" type="range" value="0"><input id="endSeasonRange" type="range" value="0"></div></div>
-          <p class="rule-copy">Keeps games with exactly two of <code>PTS</code>, <code>REB</code>, and <code>AST</code> at 10+, then tests whether the missed category + <code>STL</code> + <code>BLK</code> reaches 10. Official triple-doubles are excluded.</p>
-        </section>
-
-        <section class="metric-grid" aria-label="Analysis summary">
-          <article><span>QUALIFYING GAMES</span><strong id="qualifyingCount">—</strong><small>additional custom triple-doubles</small></article>
-          <article><span>UNIQUE PLAYERS</span><strong id="playerCount">—</strong><small>with a qualifying game</small></article>
-          <article><span>TOP PLAYER</span><strong id="topPlayer">—</strong><small id="topPlayerDetail">load a data set to begin</small></article>
-          <article><span>DATA COVERAGE</span><strong id="coverage">—</strong><small id="coverageDetail">no rows available</small></article>
-        </section>
-
-        <section class="results-card">
-          <div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3 id="resultsTitle">Qualifying player-games</h3></div><div class="results-actions"><div class="view-toggle"><button class="active" data-result-view="games">Game log</button><button data-result-view="players">By player</button></div><span id="resultMeta">Loading corpus...</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr></thead><tbody id="resultsBody"><tr class="empty"><td colspan="11"><div class="empty-glyph">⌁</div><strong>Connecting to the NBA corpus.</strong><br>The analysis will be ready in a moment.</td></tr></tbody></table></div>
-        </section>
-      </section>
-
-      <section id="placeholderView" class="view placeholder-view" hidden>
-        <p class="eyebrow amber">NEXT MODULE</p><h2 id="placeholderTitle">Overview</h2><p id="placeholderCopy">Build your next analysis from the same imported data set.</p><div class="placeholder-grid"><article>Reusable CSV data layer</article><article>Shared season and player filters</article><article>Exportable query results</article></div><button class="primary switch-to-lab">Open Triple-Double Lab <span>→</span></button>
-      </section>
-    </main>
-  </div>
-  <div id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>CourtVision | Stat Tracker</title><link rel="stylesheet" href="styles.css"><style>.timeline{margin-top:22px;padding:16px;border:1px solid #2d4055;border-radius:7px;background:#0b1726}.timeline-head{display:flex;justify-content:space-between;font:10px 'DM Mono';letter-spacing:1px;color:#91a0b2}.timeline-labels{color:#dce6ef}.timeline-track{position:relative;height:31px;margin-top:11px}.timeline-track:before{content:"";position:absolute;left:0;right:0;top:14px;height:3px;border-radius:5px;background:#31455b}.timeline-track input{appearance:none;position:absolute;left:0;top:8px;width:100%;margin:0;background:transparent;pointer-events:none}.timeline-track input::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border-radius:50%;background:#ffb14a;border:2px solid #0b1726;pointer-events:auto;cursor:pointer}.timeline-track input::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#ffb14a;border:2px solid #0b1726;pointer-events:auto;cursor:pointer}.view-toggle{display:flex;border:1px solid #34465c;border-radius:6px;overflow:hidden}.view-toggle button{background:transparent;border:0;color:#91a0b2;padding:7px 9px;font-size:10px;cursor:pointer}.view-toggle button.active{background:#233950;color:#fff}.range-pair{display:grid;grid-template-columns:1fr 1fr;gap:13px}.range-pair label{font:10px 'DM Mono';letter-spacing:1px;color:#91a0b2}.range-pair input{width:100%;display:block;margin-top:7px;border:1px solid #2d3d50;border-radius:5px;padding:10px;background:#0b1726;color:#dde6f1;font:12px Manrope}.corpus-badge{border:1px solid #31546a;color:#67dfdf;border-radius:4px;padding:6px 8px;font:9px 'DM Mono';letter-spacing:1px}</style></head>
+<body><div class="shell"><aside class="sidebar"><a class="brand" href="#"><span class="brand-mark">CV</span><span>CourtVision<small>STAT TRACKER</small></span></a><nav class="nav" aria-label="Workspace sections"><button class="nav-item active"><span>⌁</span> Stat Tracker</button><button class="nav-item"><span>◫</span> Saved Queries</button><button class="nav-item"><span>◎</span> Player Explorer</button><button class="nav-item"><span>⌇</span> Trends</button></nav><div class="sidebar-note"><span class="live-dot"></span> Local corpus connected<br><small>Query any supported box-score stat.</small></div></aside>
+<main><header class="topbar"><div><p class="eyebrow">ANALYTICS WORKSPACE / 01</p><h1>Stat Tracker</h1></div><div class="top-actions"><span id="datasetStatus" class="dataset-status">Connecting to corpus...</span><span class="corpus-badge">LOCAL CORPUS</span></div></header>
+<section class="view active"><div class="hero"><div><p class="eyebrow amber">STAT RANGE QUERY</p><h2>Find every game inside<br>the range you care about.</h2><p>Select a box-score stat, set a minimum and maximum, then see game counts, distinct players, player leaders, and the underlying game log.</p></div><div class="hero-rule"><span>QUERY</span><strong>STAT</strong><i>choose the tracked metric</i><b>+</b><strong>MIN / MAX</strong><i>limit the completed games</i></div></div>
+<section class="control-card"><div class="control-heading"><div><p class="eyebrow">QUERY BUILDER</p><h3>NBA player-game tracker</h3></div><button id="runButton" class="primary">Run query <span>→</span></button></div><div class="filters"><label>Statistic<select id="statFilter"><option value="PTS">Points</option><option value="REB">Rebounds</option><option value="AST">Assists</option><option value="STL">Steals</option><option value="BLK">Blocks</option></select></label><div class="range-pair"><label>Minimum<input id="minFilter" type="number" min="0" value="10"></label><label>Maximum<input id="maxFilter" type="number" min="0" value="99"></label></div><label>Game type<select id="typeFilter"><option value="all">Regular season + playoffs</option><option value="Regular Season">Regular season</option><option value="Playoffs">Playoffs</option></select></label><label>Player name<input id="playerFilter" type="search" placeholder="Any player"></label></div><div class="timeline"><div class="timeline-head"><span>SEASON TIMELINE</span><span class="timeline-labels"><b id="startSeasonLabel">—</b> <span>to</span> <b id="endSeasonLabel">—</b></span></div><div class="timeline-track"><input id="startSeasonRange" type="range" value="0"><input id="endSeasonRange" type="range" value="0"></div></div><p class="rule-copy">Returns one row per player-game where the chosen stat falls within the selected inclusive range. Use <code>By player</code> to aggregate matching games into player counts.</p></section>
+<section class="metric-grid"><article><span>MATCHING GAMES</span><strong id="gameCount">—</strong><small>completed player-games in range</small></article><article><span>UNIQUE PLAYERS</span><strong id="playerCount">—</strong><small>players with a matching game</small></article><article><span>TOP PLAYER</span><strong id="topPlayer">—</strong><small id="topPlayerDetail">loading corpus</small></article><article><span>DATA COVERAGE</span><strong id="coverage">—</strong><small id="coverageDetail">loading corpus</small></article></section>
+<section class="results-card"><div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3 id="resultsTitle">Matching player-games</h3></div><div class="results-actions"><div class="view-toggle"><button class="active" data-result-view="games">Game log</button><button data-result-view="players">By player</button></div><span id="resultMeta">Loading corpus...</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div><div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="resultsBody"><tr class="empty"><td><div class="empty-glyph">⌁</div><strong>Connecting to the NBA corpus.</strong><br>The tracker will be ready in a moment.</td></tr></tbody></table></div></section></section></main></div><script src="app.js"></script></body></html>

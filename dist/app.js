@@ -1,117 +1,66 @@
-const state = { results: [], playerTotals: [], meta: null, seasons: [], resultView: "games" };
-const $ = (id) => document.getElementById(id);
-const formatNumber = (value) => new Intl.NumberFormat().format(value);
+const state = { meta: null, games: [], playerTotals: [], view: "games", stat: "PTS" };
+const $ = id => document.getElementById(id);
+const number = value => new Intl.NumberFormat().format(value);
+const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
-}
-
-function setEmpty(message, detail) {
-  $("resultsBody").innerHTML = `<tr class="empty"><td colspan="11"><div class="empty-glyph">⌁</div><strong>${escapeHtml(message)}</strong><br>${escapeHtml(detail)}</td></tr>`;
-}
-
-async function loadCorpus() {
-  try {
-    const response = await fetch("/api/meta");
-    if (!response.ok) throw new Error("The local analytics server is unavailable.");
-    state.meta = await response.json();
-    state.seasons = [...state.meta.seasons].sort();
-    $("seasonFilter").innerHTML = '<option value="all">All seasons</option>' + state.meta.seasons.map(season => `<option value="${escapeHtml(season)}">${escapeHtml(season)}</option>`).join("");
-    [$("startSeasonRange"), $("endSeasonRange")].forEach(range => { range.min = 0; range.max = state.seasons.length - 1; });
-    $("startSeasonRange").value = 0;
-    $("endSeasonRange").value = state.seasons.length - 1;
-    updateTimelineLabels();
-    $("datasetStatus").textContent = `${formatNumber(state.meta.rows)} rows · ${state.meta.source}`;
-    $("coverage").textContent = `${state.meta.seasons.length} seasons`;
-    $("coverageDetail").textContent = `${formatNumber(state.meta.rows)} player-games in corpus`;
-    await runAnalysis();
-  } catch (error) {
-    $("datasetStatus").textContent = "Corpus unavailable";
-    $("resultMeta").textContent = "Start the local server to query the corpus";
-    setEmpty("CourtVision needs its local server.", "Run: python server.py");
-  }
-}
-
-function updateTimelineLabels() {
-  let start = Number($("startSeasonRange").value);
-  let end = Number($("endSeasonRange").value);
+function updateTimeline() {
+  let start = Number($("startSeasonRange").value), end = Number($("endSeasonRange").value);
   if (start > end) { [start, end] = [end, start]; $("startSeasonRange").value = start; $("endSeasonRange").value = end; }
-  $("startSeasonLabel").textContent = state.seasons[start] || "—";
-  $("endSeasonLabel").textContent = state.seasons[end] || "—";
+  $("startSeasonLabel").textContent = state.meta?.seasons[start] || "—";
+  $("endSeasonLabel").textContent = state.meta?.seasons[end] || "—";
 }
 
-async function runAnalysis() {
-  if (!state.meta) return;
-  const params = new URLSearchParams({
-    season: $("seasonFilter").value,
-    game_type: $("typeFilter").value,
-    player: $("playerFilter").value.trim(),
-    min_defense: $("defenseFilter").value || "0",
-    start_season: state.seasons[Number($("startSeasonRange").value)] || "",
-    end_season: state.seasons[Number($("endSeasonRange").value)] || "",
-  });
-  $("runButton").disabled = true;
-  $("runButton").textContent = "Querying...";
+async function initialize() {
   try {
-    const response = await fetch(`/api/query?${params}`);
-    if (!response.ok) throw new Error("Query failed.");
-    const data = await response.json();
-    state.results = data.games;
-    state.playerTotals = data.player_totals;
-    $("qualifyingCount").textContent = formatNumber(data.total);
-    $("playerCount").textContent = formatNumber(data.unique_players);
-    $("topPlayer").textContent = data.top_player?.name ?? "—";
-    $("topPlayerDetail").textContent = data.top_player ? `${data.top_player.count} qualifying game${data.top_player.count === 1 ? "" : "s"}` : "no matching games";
-    $("resultMeta").textContent = `${formatNumber(data.total)} results from stored corpus`;
-    $("downloadButton").disabled = !data.total;
-    renderRows();
-  } catch (error) {
-    setEmpty("The query could not be completed.", "Check that server.py is still running.");
-  } finally {
-    $("runButton").disabled = false;
-    $("runButton").innerHTML = 'Run analysis <span>→</span>';
-  }
+    const response = await fetch("/api/meta"); if (!response.ok) throw new Error();
+    state.meta = await response.json(); state.meta.seasons.sort();
+    [$("startSeasonRange"), $("endSeasonRange")].forEach(range => { range.min = 0; range.max = state.meta.seasons.length - 1; });
+    $("startSeasonRange").value = 0; $("endSeasonRange").value = state.meta.seasons.length - 1; updateTimeline();
+    $("datasetStatus").textContent = `${number(state.meta.rows)} rows · ${state.meta.source}`;
+    $("coverage").textContent = `${state.meta.seasons.length} seasons`; $("coverageDetail").textContent = `${number(state.meta.rows)} stored player-games`;
+    await runQuery();
+  } catch { $("datasetStatus").textContent = "Corpus unavailable"; empty("CourtVision needs its local server.", "Run: python server.py"); }
 }
 
-function renderRows() {
-  const playerView = state.resultView === "players";
-  const rows = playerView ? state.playerTotals : state.results;
-  $("resultsTitle").textContent = playerView ? "Player leaderboard" : "Qualifying player-games";
-  if (!rows.length) {
-    setEmpty("No games match this query.", "Adjust the filters and run the analysis again.");
-    return;
-  }
-  const table = $("resultsBody").closest("table");
-  if (playerView) {
-    table.querySelector("thead").innerHTML = "<tr><th>Rank</th><th>Player</th><th>Qualifying games</th></tr>";
-    $("resultsBody").innerHTML = rows.slice(0, 500).map((row, index) => `<tr><td class="rank">${index + 1}</td><td>${escapeHtml(row.PLAYER_NAME)}</td><td class="adjusted">${row.COUNT}</td></tr>`).join("");
+async function runQuery() {
+  if (!state.meta) return;
+  const params = new URLSearchParams({ stat: $("statFilter").value, min_value: $("minFilter").value || "0", max_value: $("maxFilter").value || "999", game_type: $("typeFilter").value, player: $("playerFilter").value.trim(), start_season: state.meta.seasons[Number($("startSeasonRange").value)], end_season: state.meta.seasons[Number($("endSeasonRange").value)] });
+  $("runButton").disabled = true; $("runButton").textContent = "Querying...";
+  try {
+    const response = await fetch(`/api/query?${params}`); if (!response.ok) throw new Error();
+    const data = await response.json(); state.games = data.games; state.playerTotals = data.player_totals; state.stat = data.stat;
+    $("gameCount").textContent = number(data.total); $("playerCount").textContent = number(data.unique_players);
+    $("topPlayer").textContent = data.top_player?.PLAYER_NAME ?? "—"; $("topPlayerDetail").textContent = data.top_player ? `${data.top_player.COUNT} matching game${data.top_player.COUNT === 1 ? "" : "s"}` : "no matching players";
+    $("resultMeta").textContent = `${number(data.total)} matching games · ${data.minimum}–${data.maximum} ${data.stat}`; $("downloadButton").disabled = !data.total; render();
+  } catch { empty("The query could not be completed.", "Check that server.py is still running."); }
+  finally { $("runButton").disabled = false; $("runButton").innerHTML = 'Run query <span>→</span>'; }
+}
+
+function empty(title, detail) { $("resultsBody").innerHTML = `<tr class="empty"><td colspan="12"><div class="empty-glyph">⌁</div><strong>${escapeHtml(title)}</strong><br>${escapeHtml(detail)}</td></tr>`; }
+function render() {
+  const players = state.view === "players", rows = players ? state.playerTotals : state.games;
+  $("resultsTitle").textContent = players ? `Player counts: ${state.stat}` : `Matching player-games: ${state.stat}`;
+  if (!rows.length) { empty("No games match this query.", "Adjust the stat range, timeline, or filters."); return; }
+  if (players) {
+    $("tableHead").innerHTML = "<tr><th>Rank</th><th>Player</th><th>Matching games</th></tr>";
+    $("resultsBody").innerHTML = rows.map((row, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(row.PLAYER_NAME)}</td><td class="adjusted">${row.COUNT}</td></tr>`).join("");
   } else {
-    table.querySelector("thead").innerHTML = "<tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr>";
-    $("resultsBody").innerHTML = rows.slice(0, 500).map(row => `<tr><td>${escapeHtml(row.PLAYER_NAME)}</td><td>${escapeHtml(row.GAME_DATE || "—")}</td><td>${escapeHtml(row.SEASON || "—")}</td><td><span class="pill">${escapeHtml(row.SEASON_TYPE || "—")}</span></td><td>${row.PTS}</td><td>${row.REB}</td><td>${row.AST}</td><td>${row.STL}</td><td>${row.BLK}</td><td>${row.MISSED_STAT}</td><td class="adjusted">${row.ADJUSTED_VALUE}</td></tr>`).join("");
+    $("tableHead").innerHTML = `<tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>${state.stat}</th></tr>`;
+    $("resultsBody").innerHTML = rows.map(row => `<tr><td>${escapeHtml(row.PLAYER_NAME)}</td><td>${escapeHtml(row.GAME_DATE)}</td><td>${escapeHtml(row.SEASON)}</td><td><span class="pill">${escapeHtml(row.SEASON_TYPE)}</span></td><td>${row.PTS}</td><td>${row.REB}</td><td>${row.AST}</td><td>${row.STL}</td><td>${row.BLK}</td><td class="adjusted">${row.SELECTED_VALUE}</td></tr>`).join("");
   }
-  if (rows.length > 500) $("resultMeta").textContent += " · showing first 500";
+  if (rows.length === 500) $("resultMeta").textContent += " · showing first 500";
 }
 
 function exportResults() {
-  const playerView = state.resultView === "players";
-  const columns = playerView ? ["PLAYER_NAME", "COUNT"] : ["PLAYER_NAME","PLAYER_ID","GAME_ID","GAME_DATE","SEASON","SEASON_TYPE","PTS","REB","AST","STL","BLK","MISSED_STAT","DEFENSIVE_STATS","ADJUSTED_VALUE"];
-  const escapeCsv = value => /[",\n]/.test(String(value ?? "")) ? `"${String(value).replace(/"/g, '""')}"` : String(value ?? "");
-  const csv = [columns.join(","), ...(playerView ? state.playerTotals : state.results).map(row => columns.map(column => escapeCsv(row[column])).join(","))].join("\n");
-  const url = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
-  const link = document.createElement("a"); link.href = url; link.download = "courtvision-counterfactual-triple-doubles.csv"; link.click(); URL.revokeObjectURL(url);
+  const players = state.view === "players", rows = players ? state.playerTotals : state.games;
+  const columns = players ? ["PLAYER_NAME", "COUNT"] : ["PLAYER_NAME","PLAYER_ID","GAME_ID","GAME_DATE","SEASON","SEASON_TYPE","PTS","REB","AST","STL","BLK","SELECTED_VALUE"];
+  const quote = value => /[",\n]/.test(String(value ?? "")) ? `"${String(value).replace(/"/g, '""')}"` : String(value ?? "");
+  const url = URL.createObjectURL(new Blob([[columns.join(","), ...rows.map(row => columns.map(column => quote(row[column])).join(","))].join("\n")], {type:"text/csv"}));
+  const link = document.createElement("a"); link.href = url; link.download = `courtvision-${state.stat.toLowerCase()}-${players ? "player-counts" : "games"}.csv`; link.click(); URL.revokeObjectURL(url);
 }
 
-$("runButton").addEventListener("click", runAnalysis);
-$("downloadButton").addEventListener("click", exportResults);
-["seasonFilter", "typeFilter", "playerFilter", "defenseFilter"].forEach(id => $(id).addEventListener(id === "playerFilter" ? "input" : "change", runAnalysis));
-[$("startSeasonRange"), $("endSeasonRange")].forEach(range => range.addEventListener("input", () => { updateTimelineLabels(); runAnalysis(); }));
-document.querySelectorAll("[data-result-view]").forEach(button => button.addEventListener("click", () => { state.resultView = button.dataset.resultView; document.querySelectorAll("[data-result-view]").forEach(item => item.classList.toggle("active", item === button)); renderRows(); }));
-document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
-  document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active")); button.classList.add("active");
-  const lab = button.dataset.view === "lab"; $("labView").hidden = !lab; $("placeholderView").hidden = lab;
-  const labels = {dashboard:["Overview","A high-level readout of the stored NBA corpus will live here."],players:["Player Explorer","Compare player-level results and drill into game-by-game evidence."],seasons:["Season Trends","Track custom-stat frequency across eras, teams, and game types."],data:["Data Library","Review corpus coverage and manage saved query exports."]};
-  $("pageTitle").textContent = lab ? "Triple-Double Lab" : labels[button.dataset.view][0];
-  if (!lab) { $("placeholderTitle").textContent = labels[button.dataset.view][0]; $("placeholderCopy").textContent = labels[button.dataset.view][1]; }
-}));
-document.querySelectorAll(".switch-to-lab").forEach(button => button.addEventListener("click", () => document.querySelector('[data-view="lab"]').click()));
-loadCorpus();
+$("runButton").addEventListener("click", runQuery); $("downloadButton").addEventListener("click", exportResults);
+["statFilter", "minFilter", "maxFilter", "typeFilter", "playerFilter"].forEach(id => $(id).addEventListener(id === "playerFilter" ? "input" : "change", runQuery));
+[$("startSeasonRange"), $("endSeasonRange")].forEach(range => range.addEventListener("input", () => { updateTimeline(); runQuery(); }));
+document.querySelectorAll("[data-result-view]").forEach(button => button.addEventListener("click", () => { state.view = button.dataset.resultView; document.querySelectorAll("[data-result-view]").forEach(item => item.classList.toggle("active", item === button)); render(); }));
+initialize();
