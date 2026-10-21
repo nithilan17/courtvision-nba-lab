@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#07111f">
   <title>CourtVision | NBA Lab</title>
   <link rel="stylesheet" href="styles.css">
+  <style>.timeline{margin-top:22px;padding:16px;border:1px solid #2d4055;border-radius:7px;background:#0b1726}.timeline-head{display:flex;align-items:center;justify-content:space-between;font:10px 'DM Mono';letter-spacing:1px;color:#91a0b2}.timeline-labels{color:#dce6ef}.timeline-track{position:relative;height:31px;margin-top:11px}.timeline-track input{appearance:none;position:absolute;left:0;top:8px;width:100%;margin:0;background:transparent;pointer-events:none}.timeline-track input::-webkit-slider-thumb{appearance:none;width:15px;height:15px;border-radius:50%;background:#ffb14a;border:2px solid #0b1726;pointer-events:auto;cursor:pointer}.timeline-track input::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#ffb14a;border:2px solid #0b1726;pointer-events:auto;cursor:pointer}.timeline-track:before{content:"";position:absolute;left:0;right:0;top:14px;height:3px;border-radius:5px;background:#31455b}.view-toggle{display:flex;border:1px solid #34465c;border-radius:6px;overflow:hidden}.view-toggle button{background:transparent;border:0;color:#91a0b2;padding:7px 9px;font-size:10px;cursor:pointer}.view-toggle button.active{background:#233950;color:#fff}.rank{color:#7f8ea1}</style>
 </head>
 <body>
   <div class="shell">
@@ -41,6 +42,7 @@
             <label>Player name<input id="playerFilter" type="search" placeholder="Any player"></label>
             <label>Minimum STL + BLK<input id="defenseFilter" type="number" min="0" value="0"></label>
           </div>
+          <div class="timeline"><div class="timeline-head"><span>SEASON TIMELINE</span><span class="timeline-labels"><b id="startSeasonLabel">—</b> <span>to</span> <b id="endSeasonLabel">—</b></span></div><div class="timeline-track"><input id="startSeasonRange" type="range" value="0"><input id="endSeasonRange" type="range" value="0"></div></div>
           <p class="rule-copy">Keeps games with exactly two of <code>PTS</code>, <code>REB</code>, and <code>AST</code> at 10+, then tests whether the missed category + <code>STL</code> + <code>BLK</code> reaches 10. Official triple-doubles are excluded.</p>
         </section>
 
@@ -52,7 +54,7 @@
         </section>
 
         <section class="results-card">
-          <div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3>Qualifying player-games</h3></div><div class="results-actions"><span id="resultMeta">Loading corpus...</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div>
+          <div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3 id="resultsTitle">Qualifying player-games</h3></div><div class="results-actions"><div class="view-toggle"><button class="active" data-result-view="games">Game log</button><button data-result-view="players">By player</button></div><span id="resultMeta">Loading corpus...</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div>
           <div class="table-wrap"><table><thead><tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr></thead><tbody id="resultsBody"><tr class="empty"><td colspan="11"><div class="empty-glyph">⌁</div><strong>Connecting to the NBA corpus.</strong><br>The analysis will be ready in a moment.</td></tr></tbody></table></div>
         </section>
       </section>

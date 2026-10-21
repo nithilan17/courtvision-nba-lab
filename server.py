@@ -53,15 +53,18 @@ class Corpus:
         season = values.get("season", ["all"])[0]
         game_type = values.get("game_type", ["all"])[0]
         player = values.get("player", [""])[0].casefold()
+        start_season = values.get("start_season", [""])[0]
+        end_season = values.get("end_season", [""])[0]
         try:
             min_defense = max(0, int(values.get("min_defense", ["0"])[0]))
         except ValueError:
             min_defense = 0
-        games = [game for game in self.games if (season == "all" or game.get("SEASON") == season) and (game_type == "all" or game.get("SEASON_TYPE") == game_type) and (not player or player in str(game["PLAYER_NAME"]).casefold()) and int(game["DEFENSIVE_STATS"]) >= min_defense]
+        games = [game for game in self.games if (season == "all" or game.get("SEASON") == season) and (not start_season or str(game.get("SEASON", "")) >= start_season) and (not end_season or str(game.get("SEASON", "")) <= end_season) and (game_type == "all" or game.get("SEASON_TYPE") == game_type) and (not player or player in str(game["PLAYER_NAME"]).casefold()) and int(game["DEFENSIVE_STATS"]) >= min_defense]
         games.sort(key=lambda game: (str(game.get("GAME_DATE", "")), str(game["PLAYER_NAME"])), reverse=True)
         players = Counter(str(game["PLAYER_NAME"]) for game in games)
         top = sorted(players.items(), key=lambda item: (-item[1], item[0]))[0] if players else None
-        return {"games": games, "total": len(games), "unique_players": len(players), "top_player": {"name": top[0], "count": top[1]} if top else None}
+        player_totals = [{"PLAYER_NAME": name, "COUNT": count} for name, count in sorted(players.items(), key=lambda item: (-item[1], item[0]))]
+        return {"games": games, "player_totals": player_totals, "total": len(games), "unique_players": len(players), "top_player": {"name": top[0], "count": top[1]} if top else None}
 
 
 def handler_factory(corpus: Corpus, static_directory: Path):

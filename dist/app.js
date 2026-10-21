@@ -1,4 +1,4 @@
-const state = { results: [], meta: null };
+const state = { results: [], playerTotals: [], meta: null, seasons: [], resultView: "games" };
 const $ = (id) => document.getElementById(id);
 const formatNumber = (value) => new Intl.NumberFormat().format(value);
 
@@ -15,7 +15,12 @@ async function loadCorpus() {
     const response = await fetch("/api/meta");
     if (!response.ok) throw new Error("The local analytics server is unavailable.");
     state.meta = await response.json();
+    state.seasons = [...state.meta.seasons].sort();
     $("seasonFilter").innerHTML = '<option value="all">All seasons</option>' + state.meta.seasons.map(season => `<option value="${escapeHtml(season)}">${escapeHtml(season)}</option>`).join("");
+    [$("startSeasonRange"), $("endSeasonRange")].forEach(range => { range.min = 0; range.max = state.seasons.length - 1; });
+    $("startSeasonRange").value = 0;
+    $("endSeasonRange").value = state.seasons.length - 1;
+    updateTimelineLabels();
     $("datasetStatus").textContent = `${formatNumber(state.meta.rows)} rows · ${state.meta.source}`;
     $("coverage").textContent = `${state.meta.seasons.length} seasons`;
     $("coverageDetail").textContent = `${formatNumber(state.meta.rows)} player-games in corpus`;
@@ -27,6 +32,14 @@ async function loadCorpus() {
   }
 }
 
+function updateTimelineLabels() {
+  let start = Number($("startSeasonRange").value);
+  let end = Number($("endSeasonRange").value);
+  if (start > end) { [start, end] = [end, start]; $("startSeasonRange").value = start; $("endSeasonRange").value = end; }
+  $("startSeasonLabel").textContent = state.seasons[start] || "—";
+  $("endSeasonLabel").textContent = state.seasons[end] || "—";
+}
+
 async function runAnalysis() {
   if (!state.meta) return;
   const params = new URLSearchParams({
@@ -34,6 +47,8 @@ async function runAnalysis() {
     game_type: $("typeFilter").value,
     player: $("playerFilter").value.trim(),
     min_defense: $("defenseFilter").value || "0",
+    start_season: state.seasons[Number($("startSeasonRange").value)] || "",
+    end_season: state.seasons[Number($("endSeasonRange").value)] || "",
   });
   $("runButton").disabled = true;
   $("runButton").textContent = "Querying...";
@@ -42,6 +57,7 @@ async function runAnalysis() {
     if (!response.ok) throw new Error("Query failed.");
     const data = await response.json();
     state.results = data.games;
+    state.playerTotals = data.player_totals;
     $("qualifyingCount").textContent = formatNumber(data.total);
     $("playerCount").textContent = formatNumber(data.unique_players);
     $("topPlayer").textContent = data.top_player?.name ?? "—";
@@ -58,18 +74,29 @@ async function runAnalysis() {
 }
 
 function renderRows() {
-  if (!state.results.length) {
+  const playerView = state.resultView === "players";
+  const rows = playerView ? state.playerTotals : state.results;
+  $("resultsTitle").textContent = playerView ? "Player leaderboard" : "Qualifying player-games";
+  if (!rows.length) {
     setEmpty("No games match this query.", "Adjust the filters and run the analysis again.");
     return;
   }
-  $("resultsBody").innerHTML = state.results.slice(0, 500).map(row => `<tr><td>${escapeHtml(row.PLAYER_NAME)}</td><td>${escapeHtml(row.GAME_DATE || "—")}</td><td>${escapeHtml(row.SEASON || "—")}</td><td><span class="pill">${escapeHtml(row.SEASON_TYPE || "—")}</span></td><td>${row.PTS}</td><td>${row.REB}</td><td>${row.AST}</td><td>${row.STL}</td><td>${row.BLK}</td><td>${row.MISSED_STAT}</td><td class="adjusted">${row.ADJUSTED_VALUE}</td></tr>`).join("");
-  if (state.results.length > 500) $("resultMeta").textContent += " · showing first 500";
+  const table = $("resultsBody").closest("table");
+  if (playerView) {
+    table.querySelector("thead").innerHTML = "<tr><th>Rank</th><th>Player</th><th>Qualifying games</th></tr>";
+    $("resultsBody").innerHTML = rows.slice(0, 500).map((row, index) => `<tr><td class="rank">${index + 1}</td><td>${escapeHtml(row.PLAYER_NAME)}</td><td class="adjusted">${row.COUNT}</td></tr>`).join("");
+  } else {
+    table.querySelector("thead").innerHTML = "<tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr>";
+    $("resultsBody").innerHTML = rows.slice(0, 500).map(row => `<tr><td>${escapeHtml(row.PLAYER_NAME)}</td><td>${escapeHtml(row.GAME_DATE || "—")}</td><td>${escapeHtml(row.SEASON || "—")}</td><td><span class="pill">${escapeHtml(row.SEASON_TYPE || "—")}</span></td><td>${row.PTS}</td><td>${row.REB}</td><td>${row.AST}</td><td>${row.STL}</td><td>${row.BLK}</td><td>${row.MISSED_STAT}</td><td class="adjusted">${row.ADJUSTED_VALUE}</td></tr>`).join("");
+  }
+  if (rows.length > 500) $("resultMeta").textContent += " · showing first 500";
 }
 
 function exportResults() {
-  const columns = ["PLAYER_NAME","PLAYER_ID","GAME_ID","GAME_DATE","SEASON","SEASON_TYPE","PTS","REB","AST","STL","BLK","MISSED_STAT","DEFENSIVE_STATS","ADJUSTED_VALUE"];
+  const playerView = state.resultView === "players";
+  const columns = playerView ? ["PLAYER_NAME", "COUNT"] : ["PLAYER_NAME","PLAYER_ID","GAME_ID","GAME_DATE","SEASON","SEASON_TYPE","PTS","REB","AST","STL","BLK","MISSED_STAT","DEFENSIVE_STATS","ADJUSTED_VALUE"];
   const escapeCsv = value => /[",\n]/.test(String(value ?? "")) ? `"${String(value).replace(/"/g, '""')}"` : String(value ?? "");
-  const csv = [columns.join(","), ...state.results.map(row => columns.map(column => escapeCsv(row[column])).join(","))].join("\n");
+  const csv = [columns.join(","), ...(playerView ? state.playerTotals : state.results).map(row => columns.map(column => escapeCsv(row[column])).join(","))].join("\n");
   const url = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
   const link = document.createElement("a"); link.href = url; link.download = "courtvision-counterfactual-triple-doubles.csv"; link.click(); URL.revokeObjectURL(url);
 }
@@ -77,6 +104,8 @@ function exportResults() {
 $("runButton").addEventListener("click", runAnalysis);
 $("downloadButton").addEventListener("click", exportResults);
 ["seasonFilter", "typeFilter", "playerFilter", "defenseFilter"].forEach(id => $(id).addEventListener(id === "playerFilter" ? "input" : "change", runAnalysis));
+[$("startSeasonRange"), $("endSeasonRange")].forEach(range => range.addEventListener("input", () => { updateTimelineLabels(); runAnalysis(); }));
+document.querySelectorAll("[data-result-view]").forEach(button => button.addEventListener("click", () => { state.resultView = button.dataset.resultView; document.querySelectorAll("[data-result-view]").forEach(item => item.classList.toggle("active", item === button)); renderRows(); }));
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active")); button.classList.add("active");
   const lab = button.dataset.view === "lab"; $("labView").hidden = !lab; $("placeholderView").hidden = lab;

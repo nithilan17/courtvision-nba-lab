@@ -66,6 +66,8 @@ triple-doubles are intentionally excluded.
 ## Features
 
 - Season, game-type, player-name, and defensive-stat filters
+- Dual-handle season timeline for querying an era range
+- Player leaderboard aggregated by qualifying-game count
 - Query results with adjusted values and missed category
 - Summary metrics and player leaderboard signal
 - Exportable qualifying-game CSV
