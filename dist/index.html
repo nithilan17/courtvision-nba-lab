@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>CourtVision | NBA Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">CV</span><span>CourtVision<small>NBA LAB</small></span></a>
+      <nav class="nav" aria-label="Workspace sections">
+        <button class="nav-item active" data-view="lab"><span>⌁</span> Triple-Double Lab</button>
+        <button class="nav-item" data-view="dashboard"><span>◫</span> Overview</button>
+        <button class="nav-item" data-view="players"><span>◎</span> Player Explorer</button>
+        <button class="nav-item" data-view="seasons"><span>⌇</span> Season Trends</button>
+        <button class="nav-item" data-view="data"><span>↥</span> Data Library</button>
+      </nav>
+      <div class="sidebar-note"><span class="live-dot"></span> Browser-local data<br><small>Your CSV never leaves this browser.</small></div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><p class="eyebrow">ANALYTICS WORKSPACE / 01</p><h1 id="pageTitle">Triple-Double Lab</h1></div>
+        <div class="top-actions"><span id="datasetStatus" class="dataset-status">No data loaded</span><label class="upload-mini">Import CSV<input id="fileInput" type="file" accept=".csv,text/csv"></label></div>
+      </header>
+
+      <section id="labView" class="view active">
+        <div class="hero">
+          <div><p class="eyebrow amber">CUSTOM METRIC</p><h2>Find the games the box score<br>almost called a triple-double.</h2><p>Pool steals + blocks into the one traditional category a player missed. Tune the filters, run the query, and export the evidence.</p></div>
+          <div class="hero-rule"><span>RULE</span><strong>2 × 10+</strong><i>in PTS / REB / AST</i><b>+</b><strong>STL + BLK</strong><i>fills the remaining gap</i></div>
+        </div>
+
+        <section class="control-card">
+          <div class="control-heading"><div><p class="eyebrow">QUERY BUILDER</p><h3>Counterfactual triple-doubles</h3></div><button id="runButton" class="primary">Run analysis <span>→</span></button></div>
+          <div class="filters">
+            <label>Season<select id="seasonFilter"><option value="all">All seasons</option></select></label>
+            <label>Game type<select id="typeFilter"><option value="all">Regular season + playoffs</option><option value="Regular Season">Regular season</option><option value="Playoffs">Playoffs</option></select></label>
+            <label>Player name<input id="playerFilter" type="search" placeholder="Any player"></label>
+            <label>Minimum STL + BLK<input id="defenseFilter" type="number" min="0" value="0"></label>
+          </div>
+          <p class="rule-copy">Keeps games with exactly two of <code>PTS</code>, <code>REB</code>, and <code>AST</code> at 10+, then tests whether the missed category + <code>STL</code> + <code>BLK</code> reaches 10. Official triple-doubles are excluded.</p>
+        </section>
+
+        <section class="metric-grid" aria-label="Analysis summary">
+          <article><span>QUALIFYING GAMES</span><strong id="qualifyingCount">—</strong><small>additional custom triple-doubles</small></article>
+          <article><span>UNIQUE PLAYERS</span><strong id="playerCount">—</strong><small>with a qualifying game</small></article>
+          <article><span>TOP PLAYER</span><strong id="topPlayer">—</strong><small id="topPlayerDetail">load a data set to begin</small></article>
+          <article><span>DATA COVERAGE</span><strong id="coverage">—</strong><small id="coverageDetail">no rows available</small></article>
+        </section>
+
+        <section class="results-card">
+          <div class="results-heading"><div><p class="eyebrow">RESULTS</p><h3>Qualifying player-games</h3></div><div class="results-actions"><span id="resultMeta">Import a CSV to query your data</span><button id="downloadButton" class="secondary" disabled>Export CSV ↓</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Player</th><th>Date</th><th>Season</th><th>Type</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>Missed</th><th>Adjusted</th></tr></thead><tbody id="resultsBody"><tr class="empty"><td colspan="11"><div class="empty-glyph">⌁</div><strong>Your analysis canvas is ready.</strong><br>Import <code>nba_player_game_logs.csv</code> or explore the demo data.</td></tr></tbody></table></div>
+        </section>
+      </section>
+
+      <section id="placeholderView" class="view placeholder-view" hidden>
+        <p class="eyebrow amber">NEXT MODULE</p><h2 id="placeholderTitle">Overview</h2><p id="placeholderCopy">Build your next analysis from the same imported data set.</p><div class="placeholder-grid"><article>Reusable CSV data layer</article><article>Shared season and player filters</article><article>Exportable query results</article></div><button class="primary switch-to-lab">Open Triple-Double Lab <span>→</span></button>
+      </section>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
