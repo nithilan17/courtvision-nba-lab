@@ -1,0 +1,21 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local data and analysis exports
+*.csv
+*.tar
+output/
+example_output/
+
+# Site-provider checkout and local tooling state
+.openai/
+.sites-checkout*/
+.sites-runtime/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
